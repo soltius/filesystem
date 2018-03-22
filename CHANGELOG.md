@@ -1,3 +1,7 @@
+# __v1.1.0__ __2018-03-22__
+- ### Features
+  - adding support for swap :: [c7115f669e709624a06d215989d3cbff62e8abc6]
+  - changing to read version from VERSION file :: [4393b32dee96a6b51ff2ce965751ac734115a2f0]
 # Changelog
 
 Change Log All notable changes to this project will be documented in this file.
