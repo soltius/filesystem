@@ -4,7 +4,7 @@ maintainer_email 'help@sous-chefs.org'
 description      'Installs/Configures various filesystems'
 license          'Apache-2.0'
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
-version          '1.0.0'
+version          File.read(File.join(File.expand_path(File.dirname(__FILE__)), 'VERSION')).sub(/v/, '')
 source_url       'https://github.com/sous-chefs/filesystem'
 issues_url       'https://github.com/sous-chefs/filesystem/issues'
 chef_version     '>= 12.5' if respond_to?(:chef_version)
