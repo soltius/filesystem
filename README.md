@@ -52,7 +52,7 @@ If none of these are present then we try to find a device at the label itself.
 Filesystem Creation Options
 ===========================
 
-##### `fstype` [ocfs2|ext3|ext4|etc] (default: ext3)
+##### `fstype` [ocfs2|ext3|ext4|linux-swap|etc] (default: ext3)
 The type of filesystem to be created.
 ##### `mkfs_options` unique for each filesystem.
 Options to pass to mkfs at creation time.
@@ -121,8 +121,13 @@ Keyed filesystem creation:
      "device": "/dev/sdb",
      "mount": "/db",
      "fstype": "xfs",
-     "optons": "noatime,nobarrier",
+     "options": "noatime,nobarrier",
      "mkfs_options": "-d sunit=128,swidth=2048"
+   },
+   "testswap1": {
+     "device": "/dev/sdc",
+     "mount": "none",
+     "fstype": "linux-swap"
    },
    "applv1": {
      "mount": "/logical1",
