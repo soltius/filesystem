@@ -138,8 +138,11 @@ action :create do
     end
 
     # We form our mkfs command
-    mkfs_cmd = "mkfs -t #{fstype} #{force_option} #{mkfs_options} -L #{label} #{device}"
-
+    if fstype == 'linux-swap'
+      mkfs_cmd = "mkswap  #{force_option} #{mkfs_options} -L #{label} #{device}"
+    else
+      mkfs_cmd = "mkfs -t #{fstype} #{force_option} #{mkfs_options} -L #{label} #{device}"
+    end
     if force
 
       execute mkfs_cmd do
@@ -150,8 +153,10 @@ action :create do
 
       # We create the filesystem, but only if the device does not already contain a mountable filesystem, and we have the tools.
       execute mkfs_cmd do
-        only_if "which mkfs.#{fstype}"
+        only_if "which mkswap" if fstype == 'linux-swap'
+        only_if "which mkfs.#{fstype}" if fstype != 'linux-swap'
         not_if generic_check_cmd
+        not_if "blkid #{device} | grep swap" if fstype == 'linux-swap' 
       end
     end
   end
@@ -185,34 +190,36 @@ action :enable do
 
   if mount
 
-    # We use the chef directory method to create the mountpoint with the settings we provide
-    directory mount do
-      recursive true
-      owner user if user
-      group group if group
-      mode mode if mode
+    if fstype == 'linux-swap'
+    else
+      # We use the chef directory method to create the mountpoint with the settings we provide
+      directory mount do
+        recursive true
+        owner user if user
+        group group if group
+        mode mode if mode
+      end
     end
 
-    # Substitute the device with the file when in loopback mode.
-    # This should allow the mount to come back up on reboot.
-    device_or_file = device
-    if file && device.start_with?('/dev/loop')
-      device_or_file = file
-      options = [options, "loop=#{device}"].compact.join(',')
-    end
-
+      # Substitute the device with the file when in loopback mode.
+      # This should allow the mount to come back up on reboot.
+      device_or_file = device
+      if file && device.start_with?('/dev/loop')
+        device_or_file = file
+        options = [options, "loop=#{device}"].compact.join(',')
+      end
     # Mount using the chef resource
-    mount mount do
+    mount "Enable #{mount} for device #{device}" do
+      mount_point mount
       device device_or_file
       pass pass
       dump dump
-      fstype fstype
+      fstype fstype == 'linux-swap' ? 'swap' : fstype
       options options
       action :enable
       only_if "test -b #{device}"
-      notifies :create, "directory[#{mount}]", :immediately
+      notifies :create, "directory[#{mount}]", :immediately unless fstype == 'linux-swap'
     end
-
   end
 end
 
@@ -240,25 +247,32 @@ action :mount do
 
   if mount
 
-    # We use the chef directory method to create the mountpoint with the settings we provide
-    directory mount do
-      recursive true
-      owner user if user
-      group group if group
-      mode mode if mode
-    end
+    if fstype == 'linux-swap'
+      execute "enable swap for #{device}" do
+	command "swapon #{device}"
+        not_if "swapon -s | grep #{device}"
+      end
+    else
 
-    # Mount using the chef resource
-    mount mount do
-      device device
-      fstype fstype
-      options options
-      action :mount
-      only_if "test -b #{device}"
-      not_if "mount | grep #{device}\" \" | grep #{mount}\" \""
-      notifies :create, "directory[#{mount}]", :immediately
-    end
+      # We use the chef directory method to create the mountpoint with the settings we provide
+      directory mount do
+        recursive true
+        owner user if user
+        group group if group
+        mode mode if mode
+      end
 
+      # Mount using the chef resource
+      mount mount do
+        device device
+        fstype fstype
+        options options
+        action :mount
+        only_if "test -b #{device}"
+        not_if "mount | grep #{device}\" \" | grep #{mount}\" \""
+        notifies :create, "directory[#{mount}]", :immediately
+      end
+    end
   end
 end
 
